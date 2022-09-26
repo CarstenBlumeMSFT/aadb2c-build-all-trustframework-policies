@@ -1,0 +1,50 @@
+name: 'build-test'
+on: # rebuild any PRs and main branch changes
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+
+jobs:
+  build: # make sure build/ci work properly
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout self
+        uses: actions/checkout@v3
+      - name: Checkout aadb2c-testdata
+        uses: actions/checkout@v3
+        with:
+          repository: CarstenBlumeMSFT/aadb2c-testdata
+          path: './aadb2c-testdata'
+      - name: Run install
+        run: |
+          npm install
+      - name: Run all
+        run: |
+          npm run all
+        env:
+          POLICYFOLDER: ./aadb2c-testdata/SocialAndLocalAccounts
+          OUTPUTFOLDER: ./testPoliciesOut
+  test: # make sure the action works on a clean machine without building
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout self
+        uses: actions/checkout@v3
+      - name: Checkout aadb2c-testdata
+        uses: actions/checkout@v3
+        with:
+          repository: CarstenBlumeMSFT/aadb2c-testdata
+          path: './aadb2c-testdata'
+      - name: Test Policy building
+        uses: ./
+        with:
+          policyFolder: ./aadb2c-testdata/SocialAndLocalAccounts
+          outputFolder: ./testPoliciesOut
+          renumberSteps: true
+          verbose: true
+      - name: Upload policies
+        uses: actions/upload-artifact@v3
+        with:
+          name: builtPolicies
+          path: ./testPoliciesOut
